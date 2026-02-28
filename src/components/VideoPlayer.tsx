@@ -16,6 +16,7 @@ const VideoPlayer = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(1);
   const [showControls, setShowControls] = useState(true);
   const hideTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -62,8 +63,8 @@ const VideoPlayer = () => {
       if (e.code === "Space") { e.preventDefault(); togglePlay(); }
       if (e.code === "ArrowRight") goTo(currentIndex + 1);
       if (e.code === "ArrowLeft") goTo(currentIndex - 1);
-      if (e.code === "ArrowUp") { e.preventDefault(); if (videoRef.current) videoRef.current.volume = Math.min(1, videoRef.current.volume + 0.1); }
-      if (e.code === "ArrowDown") { e.preventDefault(); if (videoRef.current) videoRef.current.volume = Math.max(0, videoRef.current.volume - 0.1); }
+      if (e.code === "ArrowUp") { e.preventDefault(); const nv = Math.min(1, volume + 0.1); setVolume(nv); if (videoRef.current) videoRef.current.volume = nv; }
+      if (e.code === "ArrowDown") { e.preventDefault(); const nv = Math.max(0, volume - 0.1); setVolume(nv); if (videoRef.current) videoRef.current.volume = nv; }
       if (e.code === "KeyM") setMuted(m => { if (videoRef.current) videoRef.current.muted = !m; return !m; });
       if (e.code === "KeyF") videoRef.current?.requestFullscreen();
     };
@@ -159,8 +160,22 @@ const VideoPlayer = () => {
                 <SkipForward size={18} />
               </button>
               <button onClick={() => { setMuted(m => { if (videoRef.current) videoRef.current.muted = !m; return !m; }); }} className="p-2 rounded-lg hover:bg-[hsl(var(--player-hover))] transition-colors">
-                {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                {muted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
               </button>
+              <input
+                type="range"
+                min={0}
+                max={1}
+                step={0.01}
+                value={muted ? 0 : volume}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setVolume(v);
+                  if (videoRef.current) videoRef.current.volume = v;
+                  if (v > 0 && muted) { setMuted(false); if (videoRef.current) videoRef.current.muted = false; }
+                }}
+                className="w-20 h-1 accent-[hsl(var(--accent))] cursor-pointer"
+              />
               <span className="text-xs text-muted-foreground ml-2 font-mono">
                 {formatTime(currentTime)} / {formatTime(duration)}
               </span>
